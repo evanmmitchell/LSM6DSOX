@@ -97,6 +97,7 @@ typedef struct
   unsigned int DoubleTapStatus : 1;
   unsigned int WakeUpStatus : 1;
   unsigned int StepStatus : 1;
+  unsigned int SignificantMotionStatus : 1;
   unsigned int TiltStatus : 1;
   unsigned int D6DOrientationStatus : 1;
   unsigned int SleepStatus : 1;
@@ -164,6 +165,9 @@ class LSM6DSOXSensor
     LSM6DSOXStatusTypeDef Get_Step_Count(uint16_t *StepCount);
     LSM6DSOXStatusTypeDef Step_Counter_Reset();
     
+    LSM6DSOXStatusTypeDef Enable_Significant_Motion_Detection();
+    LSM6DSOXStatusTypeDef Disable_Significant_Motion_Detection();
+
     LSM6DSOXStatusTypeDef Enable_Tilt_Detection(LSM6DSOX_SensorIntPin_t IntPin);
     LSM6DSOXStatusTypeDef Disable_Tilt_Detection();
     
@@ -248,7 +252,7 @@ class LSM6DSOXSensor
 
         return 0;
       }
-		
+  
       if (dev_i2c) {
         dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
         dev_i2c->write(RegisterAddr);

@@ -46,6 +46,8 @@ Enable_Pedometer	KEYWORD2
 Disable_Pedometer	KEYWORD2
 Get_Step_Count	KEYWORD2
 Step_Counter_Reset	KEYWORD2
+Enable_Significant_Motion_Detection	KEYWORD2
+Disable_Significant_Motion_Detection	KEYWORD2
 Enable_Tilt_Detection	KEYWORD2
 Disable_Tilt_Detection	KEYWORD2
 Enable_Wake_Up_Detection	KEYWORD2

@@ -1523,6 +1523,106 @@ LSM6DSOXStatusTypeDef LSM6DSOXSensor::Step_Counter_Reset()
 }
 
 /**
+ * @brief  Enable significant motion detection
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSOXStatusTypeDef LSM6DSOXSensor::Enable_Significant_Motion_Detection()
+{
+  lsm6dsox_pin_int1_route_t val;
+  lsm6dsox_emb_sens_t emb_sens;
+
+  /* Output Data Rate selection */
+  if (Set_X_ODR(26.0f) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  /* Full scale selection */
+  if (Set_X_FS(2) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  /* Save current embedded features */
+  if (lsm6dsox_embedded_sens_get(&reg_ctx, &emb_sens) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  /* Turn off embedded features */
+  if (lsm6dsox_embedded_sens_off(&reg_ctx) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  /* Wait for 10 ms */
+  delay(10);
+
+  /* Enable significant motion algorithm. */
+  emb_sens.sig_mot = PROPERTY_ENABLE;
+
+  /* Turn on embedded features */
+  if (lsm6dsox_embedded_sens_set(&reg_ctx, &emb_sens) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  /* Enable significant motion on INT1 pin */
+  if (lsm6dsox_pin_int1_route_get(&reg_ctx, &val) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  val.sig_mot = PROPERTY_ENABLE;
+
+  if (lsm6dsox_pin_int1_route_set(&reg_ctx, val) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  return LSM6DSOX_OK;
+}
+
+/**
+ * @brief  Disable significant motion detection
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSOXStatusTypeDef LSM6DSOXSensor::Disable_Significant_Motion_Detection()
+{
+  lsm6dsox_pin_int1_route_t val1;
+  lsm6dsox_emb_sens_t emb_sens;
+
+  /* Disable significant motion detection on INT1 pin */
+  if (lsm6dsox_pin_int1_route_get(&reg_ctx, &val1) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  val1.sig_mot = PROPERTY_DISABLE;
+
+  if (lsm6dsox_pin_int1_route_set(&reg_ctx, val1) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  /* Save current embedded features */
+  if (lsm6dsox_embedded_sens_get(&reg_ctx, &emb_sens) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  /* Disable significant motion algorithm. */
+  emb_sens.sig_mot = PROPERTY_DISABLE;
+
+  if (lsm6dsox_embedded_sens_set(&reg_ctx, &emb_sens) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
+  return LSM6DSOX_OK;
+}
+
+/**
  * @brief  Enable tilt detection
  * @param  IntPin interrupt pin line to be used
  * @retval 0 in case of success, an error code otherwise
@@ -2515,6 +2615,7 @@ LSM6DSOXStatusTypeDef LSM6DSOXSensor::Get_X_DRDY_Status(uint8_t *Status)
  */
 LSM6DSOXStatusTypeDef LSM6DSOXSensor::Get_X_Event_Status(LSM6DSOX_Event_Status_t *Status)
 {
+  uint8_t sigmot_ia = 0U;
   uint8_t tilt_ia = 0U;
   lsm6dsox_wake_up_src_t wake_up_src;
   lsm6dsox_tap_src_t tap_src;
@@ -2577,6 +2678,11 @@ LSM6DSOXStatusTypeDef LSM6DSOXSensor::Get_X_Event_Status(LSM6DSOX_Event_Status_t
     return LSM6DSOX_ERROR;
   }
 
+  if (lsm6dsox_motion_flag_data_ready_get(&reg_ctx, &sigmot_ia) != LSM6DSOX_OK)
+  {
+    return LSM6DSOX_ERROR;
+  }
+
   if (lsm6dsox_tilt_flag_data_ready_get(&reg_ctx, &tilt_ia) != LSM6DSOX_OK)
   {
     return LSM6DSOX_ERROR;
@@ -2627,6 +2733,14 @@ LSM6DSOXStatusTypeDef LSM6DSOXSensor::Get_X_Event_Status(LSM6DSOX_Event_Status_t
     if (func_src.step_detected == 1U)
     {
       Status->StepStatus = 1;
+    }
+  }
+
+  if (int1_ctrl.int1_sig_mot == 1U)
+  {
+    if (sigmot_ia == 1U)
+    {
+      Status->SignificantMotionStatus = 1;
     }
   }
 
